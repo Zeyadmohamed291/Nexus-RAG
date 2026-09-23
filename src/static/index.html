@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusRAG | المساعد الذكي المتقدم للمستندات</title>
+    <!-- Google Fonts: Cairo & Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Marked & DOMPurify for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --bg-card-hover: rgba(31, 41, 55, 0.85);
+            --bg-input: rgba(15, 23, 42, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(99, 102, 241, 0.5);
+            --primary: #6366F1;
+            --primary-hover: #4F46E5;
+            --accent: #06B6D4;
+            --accent-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #06B6D4 100%);
+            --text-main: #F9FAFB;
+            --text-muted: #9CA3AF;
+            --text-subtle: #6B7280;
+            --bot-bubble: rgba(30, 41, 59, 0.8);
+            --user-bubble: linear-gradient(135deg, #4338CA 0%, #6366F1 100%);
+            --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        /* App Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            background: rgba(11, 15, 25, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            background: var(--accent-gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+        }
+
+        .brand-logo svg {
+            width: 24px;
+            height: 24px;
+            fill: #FFFFFF;
+        }
+
+        .brand-info h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-info h1 span.badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #A5B4FC;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .brand-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .project-pill {
+            display: flex;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 4px 12px;
+            gap: 8px;
+        }
+
+        .project-pill label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .project-pill input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            width: 60px;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            outline: none;
+        }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-action:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        /* Main Chat Container */
+        main {
+            flex: 1;
+            max-width: 960px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            position: relative;
+        }
+
+        #chat-messages {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            overflow-y: auto;
+            padding-bottom: 2rem;
+            scroll-behavior: smooth;
+        }
+
+        /* Message Bubbles */
+        .message-row {
+            display: flex;
+            gap: 14px;
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .message-row.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .message-row.assistant .avatar {
+            background: var(--accent-gradient);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+            color: #FFF;
+        }
+
+        .message-row.user .avatar {
+            background: #374151;
+            color: #D1D5DB;
+            border: 1px solid var(--border-color);
+        }
+
+        .bubble-wrap {
+            max-width: 82%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .message-bubble {
+            padding: 1rem 1.35rem;
+            border-radius: var(--radius-lg);
+            font-size: 0.98rem;
+            line-height: 1.7;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        .message-row.assistant .message-bubble {
+            background: var(--bot-bubble);
+            border: 1px solid var(--border-color);
+            color: #F3F4F6;
+            border-top-right-radius: 4px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .message-row.user .message-bubble {
+            background: var(--user-bubble);
+            color: #FFFFFF;
+            border-top-left-radius: 4px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Markdown Styles in Assistant Bubble */
+        .message-bubble h1, .message-bubble h2, .message-bubble h3 {
+            margin-top: 0.8rem;
+            margin-bottom: 0.4rem;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .message-bubble h1 { font-size: 1.25rem; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+        .message-bubble h2 { font-size: 1.12rem; }
+        .message-bubble h3 { font-size: 1.02rem; }
+
+        .message-bubble p {
+            margin-bottom: 0.6rem;
+        }
+
+        .message-bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message-bubble ul, .message-bubble ol {
+            margin: 0.5rem 1.4rem 0.8rem 0;
+            padding-right: 0.5rem;
+        }
+
+        .message-bubble li {
+            margin-bottom: 0.35rem;
+        }
+
+        .message-bubble strong {
+            color: #A5B4FC;
+            font-weight: 700;
+        }
+
+        .message-bubble code {
+            background: rgba(0, 0, 0, 0.35);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Outfit', monospace;
+            font-size: 0.88rem;
+            color: #38BDF8;
+        }
+
+        .message-bubble pre {
+            background: #030712;
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            margin: 0.6rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .message-bubble pre code {
+            background: transparent;
+            padding: 0;
+            color: #E2E8F0;
+        }
+
+        .bubble-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: var(--text-subtle);
+            padding: 0 4px;
+        }
+
+        .btn-copy {
+            background: transparent;
+            border: none;
+            color: var(--text-subtle);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .btn-copy:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px 16px;
+            background: var(--bot-bubble);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .typing-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes pulse {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Quick Suggestions */
+        .suggestions-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 0.5rem 0 1rem 0;
+            scrollbar-width: none;
+        }
+
+        .suggestions-bar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .suggestion-chip {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border-color);
+            color: #CBD5E1;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.84rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+        }
+
+        .suggestion-chip:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
+        /* Input Bar */
+        .input-container {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 8px 12px 8px 16px;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-container:focus-within {
+            border-color: var(--border-focus);
+            box-shadow: 0 10px 35px rgba(99, 102, 241, 0.25);
+        }
+
+        textarea#user-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            max-height: 140px;
+            min-height: 28px;
+            padding: 4px 0;
+        }
+
+        textarea#user-input::placeholder {
+            color: var(--text-subtle);
+        }
+
+        .btn-send {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #FFFFFF;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-send:hover:not(:disabled) {
+            transform: scale(1.06);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-send svg {
+            width: 18px;
+            height: 18px;
+            transform: rotate(180deg); /* align arrow for RTL */
+        }
+
+        /* Modal for Document Upload */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #111827;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 480px;
+            padding: 1.75rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .btn-close {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        .upload-dropzone {
+            border: 2px dashed rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: var(--radius-md);
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .upload-dropzone:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .upload-dropzone p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+
+        .modal-btn {
+            width: 100%;
+            background: var(--accent-gradient);
+            color: #FFFFFF;
+            border: none;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .modal-btn:hover {
+            opacity: 0.92;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #34D399;
+            background: rgba(52, 211, 153, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #34D399;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #34D399;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="brand">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <div class="brand-info">
+                <h1>NexusRAG <span class="badge">Enterprise RAG</span></h1>
+                <p>منصة استرجاع وتوليد ذكية متقدمة للبحث في المستندات والإجابة بدقة</p>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>النظام جاهز</span>
+            </div>
+
+            <div class="project-pill" title="رقم المشروع النشط">
+                <label>المشروع:</label>
+                <input type="number" id="project-id-input" value="151" min="1">
+            </div>
+
+            <button class="btn-action" id="btn-open-upload" title="رفع وتضمين مستند جديد">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                </svg>
+                <span>رفع ملف</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Chat Window -->
+    <main>
+        <!-- Messages List -->
+        <div id="chat-messages">
+            <!-- Welcome message -->
+            <div class="message-row assistant">
+                <div class="avatar">AI</div>
+                <div class="bubble-wrap">
+                    <div class="message-bubble">
+                        <p>أهلاً بك! أنا مساعدك الذكي <strong>NexusRAG</strong> 🚀</p>
+                        <p>قمت بتحليل مستندات المشروع رقم <code>151</code> وتخزينها بالكامل. يمكنك سؤالي عن أي تفاصيل موجودة بالمستند، وسأجيبك بدقة وتنسيق منظم!</p>
+                    </div>
+                    <div class="bubble-meta">
+                        <span>الآن</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div class="suggestions-bar">
+            <div class="suggestion-chip" onclick="askSuggestion('مين زياد محمد؟')">💡 مين زياد محمد؟</div>
+            <div class="suggestion-chip" onclick="askSuggestion('ما هي المهارات التقنية لزياد؟')">🛠️ ما هي مهاراته؟</div>
+            <div class="suggestion-chip" onclick="askSuggestion('ما هي المشاريع المذكورة في المستند؟')">📂 ما هي المشاريع؟</div>
+            <div class="suggestion-chip" onclick="askSuggestion('ما هو المؤهل والتعليم الخاص بزياد؟')">🎓 المؤهل والتعليم؟</div>
+        </div>
+
+        <!-- Input Box -->
+        <div class="input-container">
+            <textarea id="user-input" placeholder="اكتب سؤالك هنا... (اضغط Enter للإرسال)" rows="1"></textarea>
+            <button class="btn-send" id="btn-send" title="إرسال">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </main>
+
+    <!-- Upload Modal -->
+    <div class="modal-overlay" id="upload-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>رفع ومعالجة مستند جديد</h2>
+                <button class="btn-close" id="btn-close-modal">&times;</button>
+            </div>
+            <div class="upload-dropzone" onclick="document.getElementById('file-upload-input').click()">
+                <svg width="40" height="40" fill="#818CF8" viewBox="0 0 16 16" style="margin: 0 auto 10px;">
+                    <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2zm2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0l2 2z"/>
+                </svg>
+                <strong id="file-chosen-text">انقر لاختيار ملف PDF أو TXT</strong>
+                <p>الحد الأقصى للملف: 10 ميجابايت</p>
+                <input type="file" id="file-upload-input" accept=".pdf,.txt" style="display: none;">
+            </div>
+            <button class="modal-btn" id="btn-start-upload">رفع وفهرسة المستند تلقائياً 🚀</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const btnSend = document.getElementById('btn-send');
+        const projectIdInput = document.getElementById('project-id-input');
+
+        // Modal elements
+        const uploadModal = document.getElementById('upload-modal');
+        const btnOpenUpload = document.getElementById('btn-open-upload');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const fileInput = document.getElementById('file-upload-input');
+        const fileChosenText = document.getElementById('file-chosen-text');
+        const btnStartUpload = document.getElementById('btn-start-upload');
+
+        let isWaiting = false;
+
+        // Auto resize textarea
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+        });
+
+        // Enter key to send (Shift+Enter for newline)
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        btnSend.addEventListener('click', sendMessage);
+
+        function askSuggestion(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            const query = userInput.value.trim();
+            const projectId = projectIdInput.value.trim();
+
+            if (!query || isWaiting) return;
+
+            // Append user message
+            appendUserMessage(query);
+            userInput.value = '';
+            userInput.style.height = 'auto';
+
+            // Show typing indicator
+            const typingId = showTypingIndicator();
+            isWaiting = true;
+            btnSend.disabled = true;
+
+            try {
+                const response = await fetch(`/api/v1/nlp/index/answer/${projectId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: query, limit: 5 })
+                });
+
+                removeTypingIndicator(typingId);
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    appendAssistantMessage(`⚠️ عذراً، حدث خطأ أثناء جلب الإجابة (${errData.signal || response.statusText}). تأكد من رقم المشروع أو رفع الملفات أولاً.`);
+                } else {
+                    const data = await response.json();
+                    if (data.answer) {
+                        appendAssistantMessage(data.answer);
+                    } else {
+                        appendAssistantMessage("لم يتم العثور على إجابة متعلقة بسؤالك في المستندات المتاحة.");
+                    }
+                }
+            } catch (err) {
+                removeTypingIndicator(typingId);
+                appendAssistantMessage(`⚠️ تعذر الاتصال بالسيرفر: ${err.message}`);
+            } finally {
+                isWaiting = false;
+                btnSend.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        function appendUserMessage(text) {
+            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const row = document.createElement('div');
+            row.className = 'message-row user';
+            row.innerHTML = `
+                <div class="avatar">أنت</div>
+                <div class="bubble-wrap">
+                    <div class="message-bubble">${escapeHtml(text)}</div>
+                    <div class="bubble-meta"><span>${time}</span></div>
+                </div>
+            `;
+            chatMessages.appendChild(row);
+            scrollToBottom();
+        }
+
+        function appendAssistantMessage(markdownText) {
+            const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const rawHtml = marked.parse(markdownText);
+            const cleanHtml = DOMPurify.sanitize(rawHtml);
+
+            const row = document.createElement('div');
+            row.className = 'message-row assistant';
+            
+            const msgId = 'msg-' + Date.now();
+            row.innerHTML = `
+                <div class="avatar">AI</div>
+                <div class="bubble-wrap">
+                    <div class="message-bubble" id="${msgId}">${cleanHtml}</div>
+                    <div class="bubble-meta">
+                        <span>${time}</span>
+                        <button class="btn-copy" onclick="copyMessage('${msgId}')">
+                            <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>
+                            <span>نسخ</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(row);
+            scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const id = 'typing-' + Date.now();
+            const row = document.createElement('div');
+            row.className = 'message-row assistant';
+            row.id = id;
+            row.innerHTML = `
+                <div class="avatar">AI</div>
+                <div class="bubble-wrap">
+                    <div class="typing-indicator">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(row);
+            scrollToBottom();
+            return id;
+        }
+
+        function removeTypingIndicator(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function copyMessage(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            navigator.clipboard.writeText(el.innerText).then(() => {
+                alert('تم نسخ الإجابة بنجاح!');
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Modal handlers
+        btnOpenUpload.onclick = () => uploadModal.classList.add('active');
+        btnCloseModal.onclick = () => uploadModal.classList.remove('active');
+        uploadModal.onclick = (e) => { if (e.target === uploadModal) uploadModal.classList.remove('active'); };
+
+        fileInput.onchange = function() {
+            if (this.files.length > 0) {
+                fileChosenText.textContent = this.files[0].name;
+            }
+        };
+
+        btnStartUpload.onclick = async function() {
+            if (!fileInput.files.length) {
+                alert('يرجى اختيار ملف أولاً.');
+                return;
+            }
+
+            const projectId = projectIdInput.value.trim();
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            btnStartUpload.disabled = true;
+            btnStartUpload.textContent = 'جاري رفع الملف... ⏳';
+
+            try {
+                // Step 1: Upload
+                const upRes = await fetch(`/api/v1/data/upload/${projectId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!upRes.ok) throw new Error('فشل رفع الملف.');
+
+                // Step 2: Process & Push workflow
+                btnStartUpload.textContent = 'جاري التقطيع والفهرسة بالذكاء الاصطناعي... ⚙️';
+                const pushRes = await fetch(`/api/v1/data/process-and-push/${projectId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chunk_size: 500, overlap_size: 50, do_reset: 0 })
+                });
+                if (!pushRes.ok) throw new Error('فشلت الفهرسة.');
+
+                alert('تم رفع المستند وفهرسته بنجاح! يمكنك الآن سؤاله مباشرة.');
+                uploadModal.classList.remove('active');
+            } catch (err) {
+                alert('حدث خطأ: ' + err.message);
+            } finally {
+                btnStartUpload.disabled = false;
+                btnStartUpload.textContent = 'رفع وفهرسة المستند تلقائياً 🚀';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+# ==========================================
+# Byte-compiled / optimized / DLL files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.bak
+*.dat
+*.dir
+
+# ==========================================
+# Environments & Virtual Envs
+# ==========================================
+.env
+.env.*
+!.env.example
+!.env.example.*
+src/.env
+src/.env.*
+!src/.env.example
+docker/env/.env*
+!docker/env/.env.example*
+
+.venv/
+venv/
+ENV/
+env/
+src/venv/
+src/.venv/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Databases & Local Vector Stores
+# ==========================================
+*.sqlite3
+*.sqlite3-journal
+*.db
+qdrant_db/
+src/qdrant_db/
+
+# ==========================================
+# User Uploads & Local Assets
+# ==========================================
+src/assets/files/*
+!src/assets/files/.gitkeep
+src/assets/database/*
+!src/assets/database/.gitkeep
+
+# ==========================================
+# Celery & Background Task Artifacts
+# ==========================================
+celerybeat-schedule*
+celerybeat.pid
+*.pid
+*.log
+
+# ==========================================
+# Distribution / Packaging
+# ==========================================
+build/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# Unit test / Coverage reports
+# ==========================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+
+# ==========================================
+# IDEs & Operating System
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
