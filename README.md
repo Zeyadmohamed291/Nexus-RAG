@@ -53,7 +53,7 @@ flowchart TD
     end
 
     subgraph AI Provider Ecosystem
-        Gemini["Google Gemini (1.5 Flash / Pro)"]
+        Gemini["Google Gemini (3.6 Flash)"]
         OpenAI["OpenAI (GPT-4o / Text-Embedding-3)"]
         Cohere["Cohere (Command-R / Embed-v3)"]
     end
